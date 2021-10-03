@@ -53,26 +53,6 @@ func (tm *simpleTimeManager) OnNodesChanged(nodes int) {
 	}
 }
 
-func (tm *simpleTimeManager) OnIterationComplete(line mainLine) {
-	if tm.limits.Infinite {
-		return
-	}
-	if tm.limits.Depth != 0 && line.depth >= tm.limits.Depth {
-		tm.cancel()
-		return
-	}
-	if line.score >= winIn(line.depth-5) ||
-		line.score <= lossIn(line.depth-5) {
-		tm.cancel()
-		return
-	}
-	if tm.softLimit != 0 &&
-		time.Since(tm.start) >= tm.softLimit {
-		tm.cancel()
-		return
-	}
-}
-
 func (tm *simpleTimeManager) Close() {
 	tm.cancel()
 }

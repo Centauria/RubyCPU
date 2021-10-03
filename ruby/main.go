@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/Centauria/RubyCPU/engine"
-	"github.com/Centauria/RubyCPU/uci"
 	"log"
 	"os"
 	"runtime"
@@ -31,14 +31,16 @@ func main() {
 		"GitRevision", gitRevision,
 		"RuntimeVersion", runtime.Version())
 
-	var ruby = engine.NewEngine()
+	var ruby = engine.NewEngine(1)
+	var cmd string
 
-	var protocol = uci.New(name, author, versionName, ruby,
-		[]uci.Option{
-			&uci.IntOption{Name: "Hash", Min: 4, Max: 1 << 16, Value: &ruby.Hash},
-			&uci.IntOption{Name: "Threads", Min: 1, Max: runtime.NumCPU(), Value: &ruby.Threads},
-		},
-	)
+	ruby.Start()
 
-	uci.RunCli(logger, protocol)
+	for {
+		_, err := fmt.Scan(&cmd)
+		if err != nil {
+			return
+		}
+		ruby.Input(cmd)
+	}
 }

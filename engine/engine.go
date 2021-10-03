@@ -1,86 +1,69 @@
 package engine
 
 import (
-	"context"
-	"github.com/notnil/chess"
+	"fmt"
+	"sync"
 	"time"
 )
 
 type Engine struct {
-	Hash        int
-	Threads     int
-	timeManager TimeManager
-	done        <-chan struct{}
-	threads     []thread
-	progress    func(info SearchInfo)
-	mainLine    mainLine
-	start       time.Time
-	nodes       int64
-	depth       int32
+	ThreadsNum int
+	threads    []thread
+	Stdout     chan string
+	mu         *sync.Mutex
+	wg         *sync.WaitGroup
 }
 
 type thread struct {
-	engine *Engine
-	nodes  int64
-	depth  int32
-	stack  [stackSize]struct {
-		position   *chess.Position
-		moveList   []chess.Move
-		pv         pv
-		staticEval int
+	Engine *Engine
+	Run    func()
+	Stdin  chan string
+	wg     *sync.WaitGroup
+}
+
+func NewEngine(threadsNum int) *Engine {
+	wg := &sync.WaitGroup{}
+	engine := &Engine{
+		ThreadsNum: threadsNum,
+		threads:    make([]thread, threadsNum),
+		Stdout:     make(chan string, threadsNum),
+		mu:         &sync.Mutex{},
+		wg:         wg,
 	}
-}
-
-type pv struct {
-	items [stackSize]chess.Move
-	size  int
-}
-
-type mainLine struct {
-	moves []chess.Move
-	score int
-	depth int
-}
-
-type TimeManager interface {
-	OnNodesChanged(nodes int)
-	OnIterationComplete(line mainLine)
-	Close()
-}
-
-func NewEngine() *Engine {
-	return &Engine{
-		Hash:    16,
-		Threads: 1,
-	}
-}
-
-func (e *Engine) Prepare() {
-	if len(e.threads) != e.Threads {
-		e.threads = make([]thread, e.Threads)
-		for i := range e.threads {
-			var t = &e.threads[i]
-			t.engine = e
+	for i := 0; i < threadsNum; i++ {
+		wg.Add(1)
+		t := thread{
+			Engine: engine,
+			Stdin:  make(chan string),
+			wg:     wg,
 		}
+		t.Run = func() {
+			defer wg.Done()
+			cmd := <-t.Stdin
+			time.Sleep(1 * time.Second)
+			engine.Stdout <- fmt.Sprintf("Reply cmd(%s)", cmd)
+		}
+		engine.threads[i] = t
+	}
+	return engine
+}
+
+func (e Engine) Start() {
+	for _, t := range e.threads {
+		go t.Run()
+	}
+	e.wg.Wait()
+	for range e.threads {
+		println(<-e.Stdout)
 	}
 }
 
-func (e *Engine) Search(ctx context.Context, searchParams SearchParams) SearchInfo {
-	e.start = time.Now()
-	e.Prepare()
-	var p = &searchParams.Positions[len(searchParams.Positions)-1]
-	ctx, e.timeManager = newSimpleTimeManager(ctx, e.start, searchParams.Limits, p)
-	defer e.timeManager.Close()
-	e.nodes = 0
-	for i := range e.threads {
-		var t = &e.threads[i]
-		t.nodes = 0
-		t.stack[0].position = p
+func (e Engine) Input(cmd string) {
+	for _, t := range e.threads {
+		t.Input(cmd)
 	}
-	e.progress = searchParams.Progress
-	lazySmp(ctx, e)
-	return e.currentSearchResult()
 }
 
-func (e *Engine) Clear() {
+func (t thread) Input(cmd string) {
+	t.Stdin <- cmd
 }
