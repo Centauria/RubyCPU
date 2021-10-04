@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Centauria/RubyCPU/engine"
 	"github.com/notnil/chess"
+	"strconv"
 	"strings"
 )
 
@@ -77,8 +78,15 @@ func (p *ProtocolUCI) Handle(_ context.Context, command string) error {
 }
 
 func (p *ProtocolUCI) setOption(name string, value string) (err error) {
-	if _, ok := engine.Options[name]; ok {
-		engine.Options[name] = value
+	if v, ok := engine.Options[name]; ok {
+		switch v.(type) {
+		case int:
+			engine.Options[name], _ = strconv.Atoi(value)
+		case bool:
+			engine.Options[name], _ = strconv.ParseBool(value)
+		case string:
+			engine.Options[name] = value
+		}
 	} else {
 		err = fmt.Errorf("option \"%s\" not exist", name)
 	}
