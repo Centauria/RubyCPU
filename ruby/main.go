@@ -2,8 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"github.com/Centauria/RubyCPU/engine"
+	"github.com/Centauria/RubyCPU/uci"
 	"log"
 	"os"
 	"runtime"
@@ -25,22 +24,16 @@ func main() {
 
 	var logger = log.New(os.Stderr, "", log.LstdFlags)
 
-	logger.Println(name,
-		"VersionName", versionName,
-		"BuildDate", buildDate,
-		"GitRevision", gitRevision,
-		"RuntimeVersion", runtime.Version())
+	logger.Println(name)
+	logger.Println("Author:", author)
+	logger.Println("VersionName:", versionName)
+	logger.Println("BuildDate:", buildDate)
+	logger.Println("GitRevision:", gitRevision)
+	logger.Println("RuntimeVersion:", runtime.Version())
 
-	var ruby = engine.NewEngine(1)
-	var cmd string
+	var ruby = uci.ProtocolUCI{}
 
-	ruby.Start()
+	//ruby.Start()
 
-	for {
-		_, err := fmt.Scan(&cmd)
-		if err != nil {
-			return
-		}
-		ruby.Input(cmd)
-	}
+	uci.RunCli(logger, ruby)
 }
