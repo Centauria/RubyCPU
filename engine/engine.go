@@ -1,45 +1,42 @@
 package engine
 
-import (
-	"fmt"
-	"sync"
-	"time"
+import "github.com/notnil/chess"
+
+// Options available:
+// Hash: int
+// UCI_AnalyseMode: bool
+var (
+	Options = map[string]interface{}{
+		"Hash":            1,
+		"UCI_AnalyseMode": false,
+	}
 )
 
 type Engine struct {
-	daemon  *thread
-	channel chan string
-	mu      *sync.Mutex
-}
-
-type thread struct {
-	Engine *Engine
-	Run    func()
+	game *chess.Game
 }
 
 func NewEngine() *Engine {
-	engine := &Engine{
-		channel: make(chan string),
-		mu:      &sync.Mutex{},
-	}
-	t := &thread{
-		Engine: engine,
-	}
-	t.Run = func() {
-		cmd := <-engine.channel
-		time.Sleep(1 * time.Second)
-		engine.channel <- fmt.Sprintf("Reply cmd(%s)", cmd)
-	}
-	engine.daemon = t
-	return engine
+	return &Engine{}
 }
 
-func (e *Engine) Start() {
-	defer close(e.channel)
-	go e.daemon.Run()
-	println(<-e.channel)
+func (e *Engine) NewGame() {
+	e.game = chess.NewGame(chess.UseNotation(chess.UCINotation{}))
 }
 
-func (e *Engine) Input(cmd string) {
-	e.channel <- cmd
+func (e *Engine) SetPosition(fen string) (err error) {
+	f, err := chess.FEN(fen)
+	if err == nil {
+		f(e.game)
+	}
+	return
+}
+
+func (e *Engine) Move(moveStr string) (err error) {
+	err = e.game.MoveStr(moveStr)
+	return
+}
+
+func (e *Engine) ShowBoard() {
+	println(e.game.Position().Board().Draw())
 }

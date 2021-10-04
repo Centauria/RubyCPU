@@ -31,7 +31,7 @@ func main() {
 	logger.Println("GitRevision:", gitRevision)
 	logger.Println("RuntimeVersion:", runtime.Version())
 
-	var ruby = uci.ProtocolUCI{}
+	var ruby = &uci.ProtocolUCI{}
 
 	//ruby.Start()
 
