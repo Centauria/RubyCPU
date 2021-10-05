@@ -16,7 +16,7 @@ type Protocol interface {
 }
 
 type ProtocolUCI struct {
-	brain *engine.Engine
+	brain *engine.Ruby
 }
 
 func (p *ProtocolUCI) Prepare() {
@@ -39,6 +39,7 @@ func (p *ProtocolUCI) Handle(_ context.Context, command string) error {
 		println("id author Centauria CHEN")
 		println("option name Hash type spin default 1 min 1 max 128")
 		println("uciok")
+		//TODO: show all options using a function instead
 	case "setoption":
 		var name, value string
 		for i := 1; i < len(cmdArray); i++ {
@@ -69,6 +70,8 @@ func (p *ProtocolUCI) Handle(_ context.Context, command string) error {
 	case "register":
 	case "go":
 	case "ponderhit":
+		//Rival goes the same step of the engine thought
+		//so stop thinking and give the answer
 	case "stop":
 	//From now on are user-defined commands
 	case "board":
