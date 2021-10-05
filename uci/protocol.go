@@ -82,6 +82,8 @@ func (p *ProtocolUCI) setOption(name string, value string) (err error) {
 		switch v.(type) {
 		case int:
 			engine.Options[name], _ = strconv.Atoi(value)
+		case float64:
+			engine.Options[name], _ = strconv.ParseFloat(value, 64)
 		case bool:
 			engine.Options[name], _ = strconv.ParseBool(value)
 		case string:
