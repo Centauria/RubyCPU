@@ -1,6 +1,13 @@
 package engine
 
-import "github.com/notnil/chess"
+import (
+	"fmt"
+	"github.com/Centauria/RubyCPU/eval"
+	"github.com/notnil/chess"
+	"strings"
+	"sync"
+	"time"
+)
 
 // Options available:
 // Hash: int
@@ -15,17 +22,25 @@ var (
 )
 
 type Engine interface {
-	Search(receiver chan string, condition Condition)
-	Evaluate(position *chess.Position)
+	Search(condition Condition)
+	Evaluate(position *chess.Position) float32
+	Stop()
 }
 
 type Ruby struct {
-	game *chess.Game
-	pv   []*chess.Move
+	game       *chess.Game
+	pv         []*chess.Move
+	running    bool
+	result     chan *SearchResult
+	controller chan struct{}
+	mu         sync.Mutex
 }
 
 func NewEngine() *Ruby {
-	return &Ruby{}
+	return &Ruby{
+		result:     make(chan *SearchResult),
+		controller: make(chan struct{}),
+	}
 }
 
 func (r *Ruby) NewGame() {
@@ -49,10 +64,56 @@ func (r *Ruby) ShowBoard() {
 	println(r.game.Position().Board().Draw())
 }
 
-func (r *Ruby) Search(ch chan string, condition Condition) {
-
+func (r *Ruby) PositionString() string {
+	moves := make([]string, len(r.game.Moves()))
+	for i, move := range r.game.Moves() {
+		moves[i] = move.String()
+	}
+	return strings.Join(moves, " ")
 }
 
-func (r *Ruby) Evaluate(position *chess.Position) {
+func (r *Ruby) HandleSearch(_ Condition, timeout time.Duration) {
+	r.running = true
+	defer func() { r.running = false }()
+	select {
+	case <-time.After(timeout):
+		r.result <- &SearchResult{
+			BestMove: "d2d4",
+			Ponder:   "d7d5",
+		}
+		return
+	case <-r.controller:
+		r.result <- &SearchResult{
+			BestMove: "e2e4",
+			Ponder:   "e7e5",
+		}
+		return
+	}
+}
 
+func (r *Ruby) ShowResult() {
+	var result *SearchResult
+	for {
+		select {
+		case result = <-r.result:
+			fmt.Printf("bestmove %s ponder %s\n", result.BestMove, result.Ponder)
+			return
+		}
+	}
+}
+
+func (r *Ruby) Search(condition Condition) {
+	go r.HandleSearch(condition, 10*time.Second)
+	go r.ShowResult()
+}
+
+func (r *Ruby) Evaluate(position *chess.Position) float32 {
+	mb := eval.MaterialImbalance(position)
+	return mb
+}
+
+func (r *Ruby) Stop() {
+	if r.running {
+		r.controller <- struct{}{}
+	}
 }

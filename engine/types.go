@@ -5,35 +5,28 @@ import (
 	"time"
 )
 
-type LimitsType struct {
-	Ponder         bool
-	Infinite       bool
-	WhiteTime      int
-	BlackTime      int
-	WhiteIncrement int
-	BlackIncrement int
-	MoveTime       int
-	MovesToGo      int
-	Depth          int
-	Nodes          int
-	Mate           int
-}
-
-type SearchParams struct {
-	Positions []chess.Position
-	Limits    LimitsType
-	Progress  func(si SearchInfo)
-}
-
-type SearchInfo struct {
-	Score    UciScore
-	Depth    int
-	Nodes    int64
-	Time     time.Duration
-	MainLine []chess.Move
+type Condition struct {
+	Depth     int
+	Nodes     uint64
+	MoveTime  int // in milliseconds
+	Infinite  bool
+	StartTime time.Time
+	LastTime  time.Time
 }
 
 type UciScore struct {
 	Centipawns int
 	Mate       int
+}
+
+type SearchResult struct {
+	BestMove string
+	Ponder   string
+}
+
+type PositionTree struct {
+	pos        *chess.Position
+	children   []*PositionTree
+	evaluation float32
+	lastMove   *chess.Move
 }

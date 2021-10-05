@@ -69,10 +69,12 @@ func (p *ProtocolUCI) Handle(_ context.Context, command string) error {
 	case "debug":
 	case "register":
 	case "go":
+		p.brain.Search(engine.Condition{})
 	case "ponderhit":
 		//Rival goes the same step of the engine thought
 		//so stop thinking and give the answer
 	case "stop":
+		p.brain.Stop()
 	//From now on are user-defined commands
 	case "board":
 		p.brain.ShowBoard()
