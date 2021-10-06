@@ -9,18 +9,6 @@ import (
 	"time"
 )
 
-// Options available:
-// Hash: int
-// UCI_AnalyseMode: bool
-var (
-	Options = map[string]interface{}{
-		"Hash":            1,
-		"UCI_AnalyseMode": false,
-		"UCI_Chess960":    false,
-	}
-	//TODO: add `OptionConditions` which includes limits of the Options
-)
-
 type Engine interface {
 	Search(condition Condition)
 	Evaluate(position *chess.Position) float32
@@ -30,6 +18,7 @@ type Engine interface {
 type Ruby struct {
 	game       *chess.Game
 	pv         []*chess.Move
+	transTable []transTableEntry
 	running    bool
 	result     chan *SearchResult
 	controller chan struct{}
@@ -38,6 +27,7 @@ type Ruby struct {
 
 func NewEngine() *Ruby {
 	return &Ruby{
+		transTable: make([]transTableEntry, Options["Hash"].(int)),
 		result:     make(chan *SearchResult),
 		controller: make(chan struct{}),
 	}
@@ -70,6 +60,15 @@ func (r *Ruby) PositionString() string {
 		moves[i] = move.String()
 	}
 	return strings.Join(moves, " ")
+}
+
+func (r *Ruby) ResetMemory() {
+	for _, tt := range r.transTable {
+		tt.key = 0
+		tt.score = 0
+		tt.depth = 0
+		tt.typeFlag = Exact
+	}
 }
 
 func (r *Ruby) HandleSearch(_ Condition, timeout time.Duration) {

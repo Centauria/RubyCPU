@@ -94,6 +94,7 @@ func (p *ProtocolUCI) setOption(name string, value string) (err error) {
 		case string:
 			engine.Options[name] = value
 		}
+		err = engine.CheckOptions()
 	} else {
 		err = fmt.Errorf("option \"%s\" not exist", name)
 	}
