@@ -1,18 +1,25 @@
 package engine
 
+import "github.com/notnil/chess"
+
 type Flag int8
 
 const (
 	Exact Flag = iota
-	Low
-	High
+	Alpha
+	Beta
 )
 
 type transTableEntry struct {
-	key      uint64
 	depth    int8
 	typeFlag Flag
 	score    float32
+	bestMove *chess.Move
 }
 
 //`HashSize` defined as length of hash table temporarily
+
+type TransPositionTree struct {
+	pos      *transTableEntry
+	children []*TransPositionTree
+}

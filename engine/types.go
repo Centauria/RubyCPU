@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"github.com/notnil/chess"
 	"time"
 )
 
@@ -22,11 +21,4 @@ type UciScore struct {
 type SearchResult struct {
 	BestMove string
 	Ponder   string
-}
-
-type PositionTree struct {
-	pos        *chess.Position
-	children   []*PositionTree
-	evaluation float32
-	lastMove   *chess.Move
 }
